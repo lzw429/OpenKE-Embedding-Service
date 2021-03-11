@@ -21,7 +21,11 @@ class FreebaseEmbeddingClient:
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/entity_embedding_by_mid/",
                                  json=params,
                                  proxies=self.proxies)
-        entity_embedding = json.loads(str(response.content, 'utf-8'))['entity_embedding']
+        if response.status_code == 200:
+            entity_embedding = json.loads(str(response.content, 'utf-8'))['entity_embedding']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", mid: " + mid)
+            return zero_embedding()
         return np.array(entity_embedding)
 
     def get_entity_embedding_by_eid(self, eid: int) -> np.array:
@@ -29,7 +33,11 @@ class FreebaseEmbeddingClient:
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/entity_embedding_by_eid/",
                                  json=params,
                                  proxies=self.proxies)
-        entity_embedding = json.loads(str(response.content, 'utf-8'))['entity_embedding']
+        if response.status_code == 200:
+            entity_embedding = json.loads(str(response.content, 'utf-8'))['entity_embedding']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", eid: " + str(eid))
+            return zero_embedding()
         return np.array(entity_embedding)
 
     def get_relation_embedding_by_relation(self, relation: str) -> np.array:
@@ -38,7 +46,11 @@ class FreebaseEmbeddingClient:
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/relation_embedding_by_relation/",
                                  json=params,
                                  proxies=self.proxies)
-        relation_embedding = json.loads(str(response.content, 'utf-8'))['relation_embedding']
+        if response.status_code == 200:
+            relation_embedding = json.loads(str(response.content, 'utf-8'))['relation_embedding']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", relation: " + relation)
+            return zero_embedding()
         return np.array(relation_embedding)
 
     def get_relation_embedding_by_rid(self, rid: int) -> np.array:
@@ -46,7 +58,11 @@ class FreebaseEmbeddingClient:
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/relation_embedding_by_rid/",
                                  json=params,
                                  proxies=self.proxies)
-        relation_embedding = json.loads(str(response.content, 'utf-8'))['relation_embedding']
+        if response.status_code == 200:
+            relation_embedding = json.loads(str(response.content, 'utf-8'))['relation_embedding']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", rid: " + str(rid))
+            return zero_embedding()
         return np.array(relation_embedding)
 
     def get_adj_list_by_mid(self, mid: str) -> list:
@@ -54,7 +70,11 @@ class FreebaseEmbeddingClient:
         params = {'mid': mid}
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/adj_list/", json=params,
                                  proxies=self.proxies)
-        adj_list = json.loads(str(response.content, 'utf-8'))['adj_list']
+        if response.status_code == 200:
+            adj_list = json.loads(str(response.content, 'utf-8'))['adj_list']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", mid: " + str(mid))
+            return []
         return adj_list
 
     def get_inverse_adj_list_by_mid(self, mid: str) -> list:
@@ -62,23 +82,23 @@ class FreebaseEmbeddingClient:
         params = {'mid': mid}
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/inverse_adj_list/", json=params,
                                  proxies=self.proxies)
-        inverse_adj_list = json.loads(str(response.content, 'utf-8'))['inverse_adj_list']
+        if response.status_code == 200:
+            inverse_adj_list = json.loads(str(response.content, 'utf-8'))['inverse_adj_list']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", mid: " + str(mid))
+            return []
         return inverse_adj_list
 
     def get_adj_list_by_mid_list(self, mid_list: list) -> list:
         res = []
         for mid in mid_list:
-            adj_list = self.get_adj_list_by_mid(mid)
-            for triple in adj_list:
-                res.append(triple)
+            res += self.get_adj_list_by_mid(mid)
         return res
 
     def get_inverse_adj_list_by_mid_list(self, mid_list: list) -> list:
         res = []
         for mid in mid_list:
-            inverse_adj_list = self.get_inverse_adj_list_by_mid(mid)
-            for triple in inverse_adj_list:
-                res.append(triple)
+            res += self.get_inverse_adj_list_by_mid(mid)
         return res
 
     def get_adj_and_inverse_adj_list_by_mid_list(self, mid_list: list) -> list:
@@ -89,22 +109,30 @@ class FreebaseEmbeddingClient:
         params = {'mid': mid}
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/entity_id_by_mid/", json=params,
                                  proxies=self.proxies)
-        entity_id = json.loads(str(response.content, 'utf-8'))['entity_id']
+        if response.status_code == 200:
+            entity_id = json.loads(str(response.content, 'utf-8'))['entity_id']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", mid: " + str(mid))
+            return -1
         return entity_id
 
-    def get_entity_id_list_by_mid_list(self, mid_list: list) -> int:
+    def get_entity_id_list_by_mid_list(self, mid_list: list) -> list:
         res = []
         for mid in mid_list:
             res.append(self.get_entity_id_by_mid(mid))
         return res
 
-    def get_relation_id_by_relation(self, relation: str) -> int:
+    def get_relation_id_by_relation(self, relation: str) -> list:
         relation = remove_freebase_ns_prefix(relation)
         params = {'relation': relation}
         response = requests.post("http://" + self.ip_address + ":" + self.port + "/relation_id_by_relation/",
                                  json=params,
                                  proxies=self.proxies)
-        relation_id = json.loads(str(response.content, 'utf-8'))['relation_id']
+        if response.status_code == 200:
+            relation_id = json.loads(str(response.content, 'utf-8'))['relation_id']
+        else:
+            print("[WARN] response status code: " + str(response.status_code) + ", relation: " + str(relation))
+            return -1
         return relation_id
 
     def get_dgl_graph(self, id_triple_list: list, ans_mid_list: list) -> (
@@ -160,6 +188,10 @@ class FreebaseEmbeddingClient:
             else:
                 label_list.append(0)
         return subject_new_list, object_new_list, entity_embedding, relation_embedding, np.array(label_list)
+
+
+def zero_embedding():
+    return np.zeros(50)
 
 
 def get_sop_id_list(id_triple_list: list) -> (list, list, list):
